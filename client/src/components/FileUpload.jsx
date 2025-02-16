@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
 
 function FileUpload({ onUploadSuccess, setIsUploading }) {
   const [file, setFile] = useState(null);
@@ -32,7 +33,7 @@ function FileUpload({ onUploadSuccess, setIsUploading }) {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('document', file);
+formData.append('file', file); // Make sure this matches the backend field name
 
     try {
       setIsUploading(true);
@@ -47,20 +48,26 @@ function FileUpload({ onUploadSuccess, setIsUploading }) {
         });
       }, 100);
 
-      const response = await fetch('http://localhost:5000/api/upload', {
-        method: 'POST',
-        body: formData,
+      // Use axios to upload the file
+      const response = await axios.post('http://localhost:5002/api/upload-files', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // make sure the Content-Type is set correctly
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+          }
+        },
       });
 
       clearInterval(progressInterval);
       setUploadProgress(100);
-
-      const data = await response.json();
-      onUploadSuccess(data.documentId);
+      onUploadSuccess(response.filename);
       toast.success('File uploaded successfully!');
     } catch (error) {
       console.error('Upload failed:', error);
-      toast.error('Failed to upload document');
+      toast.error(error.response?.data?.message || 'Failed to upload document');
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
