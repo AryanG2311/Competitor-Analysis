@@ -47,7 +47,7 @@ const storage = multer.diskStorage({
 const PdfSchema = mongoose.model("PdfDetails");
 const upload = multer({ storage: storage });
 
-app.post("/upload-files", upload.single("file"), async (req, res) => {
+app.post("/api/upload-files", upload.single("file"), async (req, res) => {
   console.log(req.file);
   const title = req.body.title;
   const fileName = req.file.filename;
@@ -55,6 +55,7 @@ app.post("/upload-files", upload.single("file"), async (req, res) => {
     await PdfSchema.create({ title: title, pdf: fileName });
     //give all field response
     res.json({ status: "ok", title: title, pdf: fileName });
+    
   } catch (error) {
     res.json({ status: error });
   }
